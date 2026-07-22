@@ -119,12 +119,13 @@ slow to seek on **all** mobile GPUs (not just iOS) — it lags a second or two b
 the scroll. So every touch-primary device (iOS + Android; `(hover: none) and
 (pointer: coarse)`) takes a canvas path that draws a pre-extracted WebP sequence
 indexed by the same progress value; desktop keeps the real video. Override with
-`?frames=1` / `?video=1`. 360 frames @ 24 fps, 960 px wide (~6.3 MB total). Higher
-fps = crisper scrub motion; raise/lower `fps=` to trade smoothness against download,
-and keep `VIDEO.frameCount` in `src/config.ts` in sync with the number written:
+`?frames=1` / `?video=1`. 900 frames @ 60 fps, 960 px wide (~15.7 MB total) — full
+frame-for-frame parity with the 60 fps source, the crispest possible scrub. Higher
+fps = crisper motion but a larger download; lower `fps=` to trade smoothness against
+payload, and keep `VIDEO.frameCount` in `src/config.ts` in sync with the number written:
 
 ```bash
-ffmpeg -i public/media/scroll-scrub.mp4 -vf "fps=24,scale=960:-2" \
+ffmpeg -i public/media/scroll-scrub.mp4 -vf "fps=60,scale=960:-2" \
   -c:v libwebp -quality 80 -f image2 public/frames/frame_%04d.webp
 ```
 

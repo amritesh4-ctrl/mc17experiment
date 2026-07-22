@@ -30,7 +30,7 @@ export const VIDEO = {
   /** Actual duration of the re-encoded file, in seconds. */
   duration: 15.0,
   /** Mobile canvas frame sequence (see README for the ffmpeg command). */
-  frameCount: 360,
+  frameCount: 900,
   framePath: (i: number) =>
     `/frames/frame_${String(i + 1).padStart(4, "0")}.webp`,
 };
