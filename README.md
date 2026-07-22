@@ -114,9 +114,12 @@ Result: 89 keyframes, 18.9 MB. (Verify with
 ffmpeg -i public/media/scroll-scrub.mp4 -frames:v 1 -q:v 3 public/media/poster.jpg
 ```
 
-**3 · iOS frame-sequence fallback.** iOS Safari scrubs `<video>` unreliably, so the
-canvas path draws a pre-extracted WebP sequence indexed by the same progress value.
-180 frames @ 12 fps, 960 px wide (~2.9 MB total):
+**3 · Mobile frame-sequence path.** Scrubbing 1080p60 `<video>` via `currentTime` is
+slow to seek on **all** mobile GPUs (not just iOS) — it lags a second or two behind
+the scroll. So every touch-primary device (iOS + Android; `(hover: none) and
+(pointer: coarse)`) takes a canvas path that draws a pre-extracted WebP sequence
+indexed by the same progress value; desktop keeps the real video. Override with
+`?frames=1` / `?video=1`. 180 frames @ 12 fps, 960 px wide (~2.9 MB total):
 
 ```bash
 ffmpeg -i public/media/scroll-scrub.mp4 -vf "fps=12,scale=960:-2" \

@@ -29,8 +29,22 @@ const isIOS = (): boolean => {
   // iPadOS 13+ masquerades as desktop Safari; sniff touch + Mac.
   const iPadOS =
     navigator.maxTouchPoints > 1 && /Macintosh/.test(ua) && !("MSStream" in window);
-  const forced = new URLSearchParams(location.search).has("frames");
-  return iOSDevice || iPadOS || forced;
+  return iOSDevice || iPadOS;
+};
+
+/**
+ * Should this device use the frame-sequence canvas path instead of scrubbing
+ * the <video>? Scrubbing 1080p60 video via currentTime is slow to seek on ALL
+ * mobile GPUs (not just iOS) — the frame sequence is smooth everywhere. So we
+ * take the canvas path for iOS and any touch-primary (coarse-pointer) device.
+ * Override with ?frames=1 (force canvas) or ?video=1 (force video) for testing.
+ */
+const useFrameSequence = (): boolean => {
+  const q = new URLSearchParams(location.search);
+  if (q.has("frames")) return true;
+  if (q.has("video")) return false;
+  const coarse = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+  return isIOS() || coarse;
 };
 
 const prefersReducedMotion = () =>
@@ -77,7 +91,7 @@ export function initScrub(opts: InitOptions): void {
     return;
   }
 
-  if (isIOS()) {
+  if (useFrameSequence()) {
     root.classList.add("path-canvas");
     initCanvasPath({ track, canvas, video, loader, onFrame });
   } else {
@@ -154,10 +168,12 @@ function initCanvasPath(o: {
 }) {
   const { track, canvas, video, loader, onFrame } = o;
   video.hidden = true; // the <video> is unused on this path
-  const ctx = canvas.getContext("2d")!;
-  const frames: HTMLImageElement[] = [];
+  const ctx = canvas.getContext("2d", { alpha: false })!;
+  const N = VIDEO.frameCount;
+  const frames: HTMLImageElement[] = new Array(N);
+  const isLoaded: boolean[] = new Array(N).fill(false);
   let loaded = 0;
-  let currentIdx = 0;
+  let lastDrawn = -1;
 
   const label = loader.querySelector("[data-loader-pct]") as HTMLElement | null;
 
@@ -169,40 +185,57 @@ function initCanvasPath(o: {
     canvas.style.height = "100%";
   };
   sizeCanvas();
-  window.addEventListener("resize", () => {
-    sizeCanvas();
-    draw(currentIdx, true);
-  });
 
-  const draw = (idx: number, force = false) => {
-    const i = clamp(Math.round(idx), 0, VIDEO.frameCount - 1);
-    if (!force && i === currentIdx && state.ready) return;
-    currentIdx = i;
-    const img = frames[i];
-    if (!img || !img.complete || img.naturalWidth === 0) return;
-    // object-fit: cover
+  // Nearest already-loaded frame to `i`, so the canvas never blanks while the
+  // rest of the sequence is still streaming in.
+  const nearestLoaded = (i: number): number => {
+    if (isLoaded[i]) return i;
+    for (let d = 1; d < N; d++) {
+      if (i - d >= 0 && isLoaded[i - d]) return i - d;
+      if (i + d < N && isLoaded[i + d]) return i + d;
+    }
+    return -1;
+  };
+
+  const paint = (i: number, force = false) => {
+    const j = nearestLoaded(clamp(Math.round(i), 0, N - 1));
+    if (j < 0) return;
+    if (!force && j === lastDrawn) return;
+    lastDrawn = j;
+    const img = frames[j];
     const cw = canvas.width;
     const ch = canvas.height;
     const scale = Math.max(cw / img.naturalWidth, ch / img.naturalHeight);
     const w = img.naturalWidth * scale;
     const h = img.naturalHeight * scale;
-    ctx.clearRect(0, 0, cw, ch);
     ctx.drawImage(img, (cw - w) / 2, (ch - h) / 2, w, h);
   };
 
-  // Preload the whole (small) sequence, reporting progress.
-  for (let i = 0; i < VIDEO.frameCount; i++) {
+  window.addEventListener("resize", () => {
+    sizeCanvas();
+    paint(lastDrawn < 0 ? 0 : lastDrawn, true);
+  });
+
+  const enable = () => {
+    if (state.ready) return;
+    state.ready = true;
+    loader.hidden = true;
+    document.documentElement.classList.add("is-ready");
+  };
+
+  // Load frames in scroll order. Enable the scrub the moment the FIRST frame is
+  // ready (drawing falls back to the nearest loaded frame), rather than blocking
+  // on all N — so the sequence is usable in a fraction of a second.
+  for (let i = 0; i < N; i++) {
     const img = new Image();
     img.decoding = "async";
     img.onload = () => {
+      isLoaded[i] = true;
       loaded++;
-      if (label)
-        label.textContent = `${Math.round((loaded / VIDEO.frameCount) * 100)}%`;
-      if (loaded === 1) draw(0, true); // first frame ASAP
-      if (loaded === VIDEO.frameCount) {
-        state.ready = true;
-        loader.hidden = true;
-        document.documentElement.classList.add("is-ready");
+      if (label) label.textContent = `${Math.round((loaded / N) * 100)}%`;
+      if (loaded === 1) {
+        paint(0, true);
+        enable();
       }
     };
     img.src = VIDEO.framePath(i);
@@ -211,13 +244,13 @@ function initCanvasPath(o: {
 
   let currentF = 0; // eased frame index
   const frame = () => {
-    const target = clamp(
-      (-track.getBoundingClientRect().top) /
-        (track.offsetHeight - window.innerHeight)
-    ) * (VIDEO.frameCount - 1);
+    const scrollable = track.offsetHeight - window.innerHeight;
+    const target =
+      clamp(-track.getBoundingClientRect().top / (scrollable || 1)) * (N - 1);
     currentF += (target - currentF) * SCRUB.lerp;
-    draw(currentF);
-    onFrame(clamp(currentF / (VIDEO.frameCount - 1)));
+    if (Math.abs(target - currentF) < 0.01) currentF = target;
+    paint(currentF);
+    onFrame(clamp(currentF / (N - 1)));
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
