@@ -29,8 +29,8 @@ export const VIDEO = {
   poster: "/media/poster.jpg",
   /** Actual duration of the re-encoded file, in seconds. */
   duration: 15.0,
-  /** iOS canvas-fallback frame sequence (see README for the ffmpeg command). */
-  frameCount: 180,
+  /** Mobile canvas frame sequence (see README for the ffmpeg command). */
+  frameCount: 360,
   framePath: (i: number) =>
     `/frames/frame_${String(i + 1).padStart(4, "0")}.webp`,
 };
