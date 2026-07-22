@@ -1,0 +1,108 @@
+/* ============================================================================
+   Market Chronicles — design tokens
+   The single source of truth for the palette, the type scale, and the two
+   self-hosted typefaces. Nothing else in the codebase hardcodes a colour,
+   a font family, or a font size — everything reads from these custom
+   properties. Retune the publication's look here.
+   ========================================================================= */
+
+/* --- Self-hosted fonts (no Google CDN). Subset: latin. --------------------- */
+
+/* Montserrat — the primary typeface. Weights actually used: 400, 500, 600. */
+@font-face {
+  font-family: "Montserrat";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/montserrat-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Montserrat";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/montserrat-500.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Montserrat";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/montserrat-600.woff2") format("woff2");
+}
+
+/* Instrument Serif — the accent typeface. Regular + italic ONLY (no bold).
+   Never apply font-weight > 400; synthetic bolding is disabled at usage. */
+@font-face {
+  font-family: "Instrument Serif";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/instrument-serif-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Instrument Serif";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/instrument-serif-400-italic.woff2") format("woff2");
+}
+
+:root {
+  /* --- Type families ----------------------------------------------------- */
+  /* Metric-compatible fallbacks keep the layout from shifting on font swap. */
+  --font-primary: "Montserrat", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-accent: "Instrument Serif", "Iowan Old Style", "Palatino Linotype",
+    "Times New Roman", Georgia, serif;
+
+  /* --- Palette ----------------------------------------------------------- */
+  --c-indigo: #231a3d; /* primary — deep indigo violet */
+  --c-indigo-deep: #16102a; /* darker indigo for the video void / scrims */
+  --c-charcoal: #201d29; /* supporting charcoal */
+  --c-bone: #f3efe6; /* bone — light editorial ground */
+  --c-bone-dim: #e7e1d3; /* bone, one step down (rules, panels) */
+  --c-brass: #b08d4f; /* brass — metallic accent, matches the footage */
+  --c-amber: #d99a4e; /* warm amber — sparing highlight */
+  --c-ink: #1a1622; /* body text on bone */
+  --c-ink-soft: #4d4757; /* secondary text on bone */
+
+  /* Semantic roles */
+  --bg: var(--c-indigo);
+  --bg-void: var(--c-indigo-deep);
+  --fg-on-dark: var(--c-bone);
+  --fg-on-dark-soft: rgba(243, 239, 230, 0.66);
+  --fg-on-light: var(--c-ink);
+  --fg-on-light-soft: var(--c-ink-soft);
+  --accent: var(--c-brass);
+  --accent-warm: var(--c-amber);
+  --rule-on-dark: rgba(243, 239, 230, 0.16);
+  --rule-on-light: rgba(26, 22, 34, 0.14);
+
+  /* --- Type scale (fluid, clamp-based) ----------------------------------- */
+  --step--1: clamp(0.78rem, 0.75rem + 0.15vw, 0.86rem); /* fine print / captions */
+  --step-0: clamp(1rem, 0.97rem + 0.18vw, 1.09rem); /* body */
+  --step-1: clamp(1.2rem, 1.13rem + 0.35vw, 1.45rem);
+  --step-2: clamp(1.44rem, 1.3rem + 0.7vw, 1.95rem);
+  --step-3: clamp(1.75rem, 1.5rem + 1.25vw, 2.7rem);
+  --step-4: clamp(2.1rem, 1.65rem + 2.2vw, 3.8rem);
+  --step-5: clamp(2.6rem, 1.8rem + 4vw, 5.6rem); /* display */
+  --step-6: clamp(3.2rem, 1.9rem + 6.4vw, 8rem); /* hero */
+
+  /* --- Letter spacing ----------------------------------------------------
+     Montserrat is a wide geometric sans: tighten at display sizes, ease to 0
+     at body. Instrument Serif carries a slight negative tracking of its own. */
+  --track-display: -0.02em;
+  --track-heading: -0.012em;
+  --track-body: 0em;
+  --track-label: 0.14em; /* uppercase eyebrows / labels */
+  --track-accent: -0.015em;
+
+  /* --- Line heights ------------------------------------------------------ */
+  --lh-body: 1.6;
+  --lh-heading: 1.12;
+  --lh-accent: 1.08; /* Instrument Serif set tight */
+
+  /* --- Measure / rhythm -------------------------------------------------- */
+  --measure: 68ch; /* 65–75 char target for body copy */
+  --space-section: clamp(4rem, 3rem + 6vw, 9rem);
+}

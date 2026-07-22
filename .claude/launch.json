@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "market-chronicles-dev",
+      "runtimeExecutable": "C:\\Users\\AmriteshMishra\\Downloads\\node\\node.exe",
+      "runtimeArgs": ["node_modules/vite/bin/vite.js", "--port", "5180", "--strictPort"],
+      "port": 5180
+    }
+  ]
+}
